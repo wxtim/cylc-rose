@@ -35,7 +35,7 @@ from cylc.rose.utilities import (
 )
 
 
-def get_rose_vars(dir_=None, opts=None):
+def get_rose_vars(dir_=None, opts=None, dest_root=None):
     """Load template variables from Rose suite configuration.
 
     This loads the Rose suite configuration tree from the filesystem
@@ -61,6 +61,14 @@ def get_rose_vars(dir_=None, opts=None):
                 }
             }
     """
+    # Save any config already installed:
+    if rose_config_exists(dest_root, {}):
+        old_config_tree = rose_config_tree_loader(dest_root, {})
+        dumper = ConfigDumper()
+        old_conf_path = Path(dest_root) / '.plugin'
+        old_conf_path.parent.mkdir(exist_ok=True)
+        dumper.dump(old_config_tree.node, str(old_conf_path / 'oldconf'))
+
     config = {
         'env': {},
         'template_variables': {},
@@ -172,34 +180,48 @@ def record_cylc_install_options(
             Path to dump the rose-suite-cylc-conf
 
     Returns:
-        cli_config - Config Node which has been dumped to
+        cli_conf - Config Node which has been dumped to
         ``rose-suite-cylc-install.conf``.
         rose_suite_conf['opts'] - Opts section of the config node dumped to
         installed ``rose-suite.conf``.
     """
+    # Load up previous config in case of re-install.
+    # .plugin/oldconf is created in the pre-install function, and should
+    # only exist if the destination directory existed before that was run,
+    # i.e. if this is a re-install.
+    loader = ConfigLoader()
+    last_install_conf_path = (Path(dest_root) / '.plugin/oldconf')
+    if last_install_conf_path.is_file():
+        last_install_conf = loader.load(str(last_install_conf_path))
+        # We don't want this file hanging around interfering with future
+        # reinstallations.
+        last_install_conf_path.unlink()
+
     # Create a config based on command line options:
-    cli_config = get_cli_opts_node(opts)
+    cli_conf = get_cli_opts_node(opts)
+
     # Leave now if there is nothing to do:
-    if not cli_config:
+    if not cli_conf and not last_install_conf:
         return False
-    # Construct a path objects representing our target files.
+
+    # Construct path objects representing our target files.
     (Path(dest_root) / 'opt').mkdir(exist_ok=True)
-    conf_filepath = Path(dest_root) / 'opt/rose-suite-cylc-install.conf'
+    install_conf_filepath = (
+        Path(dest_root) / 'opt/rose-suite-cylc-install.conf'
+    )
     rose_conf_filepath = Path(dest_root) / 'rose-suite.conf'
     dumper = ConfigDumper()
-    loader = ConfigLoader()
 
     # If file exists we need to merge with our new config, over-writing with
     # new items where there are duplicates.
+    if install_conf_filepath.is_file():
+        oldconfig = loader.load(str(install_conf_filepath))
+        cli_conf = merge_rose_cylc_suite_install_conf(oldconfig, cli_conf)
 
-    if conf_filepath.is_file():
-        oldconfig = loader.load(str(conf_filepath))
-        cli_config = merge_rose_cylc_suite_install_conf(oldconfig, cli_config)
-
-    cli_config.comments = [
+    cli_conf.comments = [
         ' This file records CLI Options.'
     ]
-    dumper.dump(cli_config, str(conf_filepath))
+    dumper.dump(cli_conf, str(install_conf_filepath))
 
     # Replace the opts section of the rose-suite.conf in the install location.
     # If we have not a rose-suite.conf but we use one of the Rose-style
@@ -208,7 +230,7 @@ def record_cylc_install_options(
         rose_conf_filepath.touch()
     rose_suite_conf = loader.load(str(rose_conf_filepath))
     rose_suite_conf = add_cylc_install_to_rose_conf_node_opts(
-        rose_suite_conf, cli_config
+        rose_suite_conf, cli_conf
     )
     dumper(rose_suite_conf, rose_conf_filepath)
-    return cli_config, rose_suite_conf
+    return cli_conf, rose_suite_conf
