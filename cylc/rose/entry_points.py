@@ -98,17 +98,25 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
         dest_root (string or pathlib.Path)
 
     """
-    if not rose_config_exists(dir_, opts):
+    if dir_ is not None:
+        dir_ = Path(dir_)
+    if dest_root is not None:
+        dest_root = Path(dest_root)
+
+    if (
+        not rose_config_exists(dir_, opts) or
+        not rose_config_exists(dest_root, opts)
+    ):
         return False
 
     # Load the config tree
-    config_tree = rose_config_tree_loader(dir_, opts)
+    config_tree = rose_config_tree_loader(dest_root, opts)
 
     if any(i.startswith('file') for i in config_tree.node.value):
         try:
             startpoint = os.getcwd()
             os.chdir(dest_root)
-        except (FileNotFoundError, TypeError) as exc:
+        except FileNotFoundError as exc:
             raise exc
         else:
             # Carry out imports.
