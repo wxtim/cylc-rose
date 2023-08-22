@@ -22,11 +22,12 @@ from pytest import param
 from types import SimpleNamespace
 
 from cylc.rose.stem import (
+    _get_rose_stem_opts,
     ProjectNotFoundException,
     RoseStemVersionException,
     RoseSuiteConfNotFoundException,
     StemRunner,
-    get_source_opt_from_args
+    get_source_opt_from_args,
 )
 
 from metomi.rose.reporter import Reporter
@@ -291,3 +292,31 @@ def test__deduce_mirror():
     }
     project = 'someproject'
     StemRunner._deduce_mirror(source_dict, project)
+
+
+def test_process_template_engine_set_correctly(monkeypatch):
+    """Defines are correctly assigned a [<template language>:suite.rc]
+    section.
+
+    https://github.com/cylc/cylc-rose/issues/246
+    """
+    # Mimic expected result from get_rose_vars method:
+    monkeypatch.setattr(
+        'cylc.rose.stem.get_rose_vars',
+        lambda _: {'templating_detected': 'empy'}
+    )
+    monkeypatch.setattr(
+        'sys.argv',
+        ['foo', 'bar']
+    )
+
+    # We are not interested in these checks, just in the defines
+    # created by the process method.
+    stemrunner = StemRunner(_get_rose_stem_opts()[1])
+    stemrunner._ascertain_project = lambda _: ['', '', '', '', '']
+    stemrunner._this_suite = lambda: '.'
+    stemrunner._check_suite_version = lambda _: '1'
+    stemrunner.process()
+
+    for define in stemrunner.opts.defines:
+        assert define.startswith('[empy:suite.rc]')

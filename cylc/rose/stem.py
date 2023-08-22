@@ -453,7 +453,7 @@ class StemRunner:
                 # Get the name of the template section to be used:
                 template_type = get_rose_vars(
                     Path(url) / "rose-stem")["templating_detected"]
-                self.template_section = f'[{template_type}]'
+                self.template_section = f'[{template_type}:suite.rc]'
 
             # Versions of variables with hostname prepended for working copies
             url_host = self._prepend_localhost(url)
