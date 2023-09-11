@@ -450,10 +450,12 @@ class StemRunner:
             self.opts.project.append(project)
 
             if i == 0:
-                # Get the name of the template section to be used:
                 template_type = get_rose_vars(
                     Path(url) / "rose-stem")["templating_detected"]
-                self.template_section = f'[{template_type}:suite.rc]'
+                if template_type in ['jinja2', 'empy']:
+                    self.template_section = f'[{template_type}:suite.rc]'
+                else:
+                    self.template_section = f'[{template_type}]'
 
             # Versions of variables with hostname prepended for working copies
             url_host = self._prepend_localhost(url)

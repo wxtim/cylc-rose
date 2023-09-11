@@ -294,7 +294,15 @@ def test__deduce_mirror():
     StemRunner._deduce_mirror(source_dict, project)
 
 
-def test_process_template_engine_set_correctly(monkeypatch):
+@pytest.mark.parametrize(
+    'language, expect',
+    (
+        ('empy', '[empy:suite.rc]'),
+        ('jinja2', '[jinja2:suite.rc]'),
+        ('template variables', '[template variables]'),
+    )
+)
+def test_process_template_engine_set_correctly(monkeypatch, language, expect):
     """Defines are correctly assigned a [<template language>:suite.rc]
     section.
 
@@ -303,7 +311,7 @@ def test_process_template_engine_set_correctly(monkeypatch):
     # Mimic expected result from get_rose_vars method:
     monkeypatch.setattr(
         'cylc.rose.stem.get_rose_vars',
-        lambda _: {'templating_detected': 'empy'}
+        lambda _: {'templating_detected': language}
     )
     monkeypatch.setattr(
         'sys.argv',
@@ -319,4 +327,4 @@ def test_process_template_engine_set_correctly(monkeypatch):
     stemrunner.process()
 
     for define in stemrunner.opts.defines:
-        assert define.startswith('[empy:suite.rc]')
+        assert define.startswith(expect)
