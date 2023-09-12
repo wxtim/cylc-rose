@@ -75,6 +75,7 @@ from cylc.flow.scripts.install import (
 )
 
 from cylc.rose.entry_points import get_rose_vars
+from cylc.rose.utilities import _identify_templating_section
 
 import metomi.rose.config
 from metomi.rose.fs_util import FileSystemUtil
@@ -452,10 +453,8 @@ class StemRunner:
             if i == 0:
                 template_type = get_rose_vars(
                     Path(url) / "rose-stem")["templating_detected"]
-                if template_type in ['jinja2', 'empy']:
-                    self.template_section = f'[{template_type}:suite.rc]'
-                else:
-                    self.template_section = f'[{template_type}]'
+                self.template_section = _identify_templating_section(
+                    template_type, with_brackets=True)
 
             # Versions of variables with hostname prepended for working copies
             url_host = self._prepend_localhost(url)
