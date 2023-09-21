@@ -197,24 +197,11 @@ def identify_templating_section(config_node):
 
 
 def _identify_templating_section(
-    sections: Union[str, List, None] = None,
+    sections: Optional[str, None] = None,
     with_brackets: Optional[bool] = False
 ) -> str:
-    """Return a full template section string.
-
-    Args:
-        sections: Can be
-            * A list of sections
-            * A section name
-            * None
-    """
+    """Return a full template section string."""
     templating = None
-    if sections:
-        if isinstance(sections, set):
-            section = sections.pop() if sections else []
-        else:
-            section = sections
-
         if section and 'jinja2' in section:
             templating = 'jinja2:suite.rc'
         elif section and 'empy' in section:
