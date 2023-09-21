@@ -193,7 +193,7 @@ def identify_templating_section(config_node):
             f"You defined:\n\t{'; '.join(defined_sections)}"
         )
     else:
-        return _identify_templating_section(defined_sections)
+        return _identify_templating_section(list(defined_sections)[0:1])
 
 
 def _identify_templating_section(
