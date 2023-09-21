@@ -193,10 +193,10 @@ def identify_templating_section(config_node):
             f"You defined:\n\t{'; '.join(defined_sections)}"
         )
     else:
-        return _identify_templating_section(list(defined_sections)[0:1])
+        return id_templating_section(list(defined_sections)[0:1])
 
 
-def _identify_templating_section(
+def id_templating_section(
     sections: Optional[str, None] = None,
     with_brackets: Optional[bool] = False
 ) -> str:
