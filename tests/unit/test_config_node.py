@@ -262,8 +262,8 @@ def test_identify_templating_section(node_, expect, raises):
         (['jinja2', True], '[jinja2:suite.rc]'),
     )
 )
-def test__identify_templating_section(input_, expect):
-    assert _identify_templating_section(*input_) == expect
+def test_identify_templating_section(input_, expect):
+    assert id_templating_section(*input_) == expect
 
 
 
